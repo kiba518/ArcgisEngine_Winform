@@ -1,0 +1,103 @@
+﻿ //IWorkspace workspace = (pFeatureClass as IDataset).Workspace;
+        //IWorkspaceEdit workspaceEdit = workspace as IWorkspaceEdit;
+
+        //workspaceEdit.StartEditing(false);
+        //              workspaceEdit.StartEditOperation();
+
+        //             // IFeatureClassWrite featureClassWrite =pFeatureClass as IFeatureClassWrite;
+        //              IFeature tempFeature = new Feature() as IFeature;
+        //              for (int k = 0; k<featColl.Count; k++)
+        //                  {
+        //                    tempFeature = featColl[k];   //featColl是一个List类型的对象
+        //                    tempFeature = pFeatureClass.CreateFeature();
+        //                    for (int j = 2; j<featColl[k].Fields.FieldCount; j++)//前两个字段不可写
+        //                        {
+        //                        tempFeature.set_Value(j, featColl[k].get_Value(j));
+        //                        }
+        //                    //featureClassWrite.WriteFeature(featColl[k]);
+        //                            IPoint p = featColl[k].Shape as IPoint;  //一定要加上这两行，否则加载后看不到几何图形
+        //tempFeature.Shape = p;
+        //                    tempFeature.Store();            
+        //                  }
+        //              workspaceEdit.StopEditOperation();
+        //              workspaceEdit.StopEditing(true);
+
+
+		 #region 验证图层的类型和画的图像的类型是否一致 
+                IGeoDataset geoDataset = dataset as IGeoDataset;
+                IGeometry geometryTemp = new PolygonClass();
+                geometryTemp.Project(geoDataset.SpatialReference);//导入空间数据
+                if (geometryTemp != null)
+                {
+                    if (geometryTemp.GeometryType != geometry.GeometryType)
+                    {
+                        MessageBox.Show("图层类型和绘制的图形类型不一致，不能添加。");
+                        return;
+                    }
+                    var polygonTemp = geometryTemp as PolygonClass; 
+                }
+                else
+                {
+                    IGeometry geometryLineTemp = new PolylineClass();
+                    geometryLineTemp.Project(geoDataset.SpatialReference);//导入空间数据
+                    if (geometryLineTemp.GeometryType != geometry.GeometryType)
+                    {
+                        MessageBox.Show("图层类型和绘制的图形类型不一致，不能添加。");
+                        return;
+                    }
+                }
+                #endregion
+
+  #region 使用IFeature插入，（feature.Shape = pt 如果抛异常这个集合中找不到此项目，很大可能是图层和插入的几何图形类型不一致）
+
+                ////先定义一个编辑的工作空间, 然后将其转化为数据集, 最后转化为编辑工作空间
+                //IWorkspaceEdit w = (featureClass as IDataset).Workspace as IWorkspaceEdit;
+
+                ////开始事务操作
+                //w.StartEditing(false);
+                ////开始编辑
+                //w.StartEditOperation();
+                ////创建一个(点)要素
+                //IFeature feature = featureClass.CreateFeature();
+
+                //int iShape = featureClass.FindField("SHAPE");
+                //IGeometryDef geoDef = feature.Fields.Field[iShape].GeometryDef;
+                //IGeometryDefEdit geoDefEdit = geoDef as IGeometryDefEdit;
+                //geoDefEdit.HasZ_2 = false;
+
+                //IZAware pZAware = pt as IZAware;
+                //pZAware.ZAware = true;
+
+                ////赋值该要素的Shape属性
+                //feature.Shape = pt;
+                //feature.Store(); //保存要素类的修改——完成点要素类生成，此时生成的点要素类只有图形(shape/Geometry), 没有普通属性
+
+                ////结束编辑
+                //w.StopEditOperation();
+                ////结束事务操作
+                //w.StopEditing(true);
+                #endregion
+
+
+
+
+			    esriGeometryType.esriGeometryAny://"任何类型（Any valid geometry）"               
+                esriGeometryType.esriGeometryBag://"任意几何类型的集合（GeometryBag）"               
+                esriGeometryType.esriGeometryBezier3Curve:// "贝兹曲线（BezierCurve）"               
+                esriGeometryType.esriGeometryCircularArc:// "圆弧（CircularArc）"               
+                esriGeometryType.esriGeometryEllipticArc://"椭圆弧（EllipticArc）"               
+                esriGeometryType.esriGeometryEnvelope://"外包（Envelope）"               
+                esriGeometryType.esriGeometryLine:// "线段（Line）"               
+                esriGeometryType.esriGeometryMultiPatch:// "表面几何（MultiPatch）"               
+                esriGeometryType.esriGeometryMultipoint://"多点（Multipoint）"               
+                esriGeometryType.esriGeometryNull:// "未知类型（Unknown）"               
+                esriGeometryType.esriGeometryPath://"路径（Path）"               
+                esriGeometryType.esriGeometryPoint://"点（Point）"               
+                esriGeometryType.esriGeometryPolygon://"多边形（Polygon）"               
+                esriGeometryType.esriGeometryPolyline:// "多段线（Polyline）"               
+                esriGeometryType.esriGeometryRay://"射线（Ray）"               
+                esriGeometryType.esriGeometryRing://"环（Ring）"               
+                esriGeometryType.esriGeometrySphere://"球体（Sphere）"               
+                esriGeometryType.esriGeometryTriangleFan:// "三角扇形（TriangleFan）"               
+                esriGeometryType.esriGeometryTriangleStrip://"三角带（TriangleStrip）"               
+                esriGeometryType.esriGeometryTriangles:// "三角形（Triangles）"
