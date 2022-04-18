@@ -6,6 +6,7 @@ using ESRI.ArcGIS.Display;
 using ESRI.ArcGIS.esriSystem;
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.Geometry;
+using ESRI.ArcGIS.Output;
 using ESRI.ArcGIS.SystemUI;
 using System;
 using System.Collections.Generic;
@@ -930,6 +931,92 @@ namespace ArcGISFormsApp1
         }
         #endregion
 
+        #region 导出为图片
+        /// <summary>
+        /// 地图输出
+        /// </summary>
+        /// <param name="map">地图</param>
+        /// <param name="outputFile">输出文件路径</param>
+        /// <param name="resolution">水平和垂直分辨率</param>
+        /// <returns>是否成功</returns>
+        public static bool MapExport(IMap map, string outputFile, double resolution)
+        {
+            IActiveView activeView = map as IActiveView;
+            if (activeView == null) return false;
+
+            IExport exporter = null;
+            string extension = System.IO.Path.GetExtension(outputFile);
+            switch (extension.ToLower())
+            {
+                case ".jpg":
+                    exporter = new ExportJPEGClass() as IExport;
+                    break;
+
+                case ".pdf":
+                    exporter = new ExportPDFClass() as IExport;
+                    break;
+
+                case ".png":
+                    exporter = new ExportPNGClass() as IExport;
+                    break;
+
+                case ".tif":
+                    exporter = new ExportTIFFClass() as IExport;
+                    break;
+
+                case ".bmp":
+                    exporter = new ExportBMPClass() as IExport;
+                    break;
+
+                case ".gif":
+                    exporter = new ExportGIFClass() as IExport;
+                    break;
+
+                default:
+                    throw new Exception("输出图片格式不支持！");
+
+            }
+
+            try
+            {
+                double screenResolution = activeView.ScreenDisplay.DisplayTransformation.Resolution;
+
+                exporter.ExportFileName = outputFile;
+                exporter.Resolution = resolution;
+
+                tagRECT exportRect = new tagRECT();
+                exportRect.left = 0;
+                exportRect.top = 0;
+                exportRect.right = Convert.ToInt32(activeView.ExportFrame.right * (resolution / screenResolution));
+                exportRect.bottom = Convert.ToInt32(activeView.ExportFrame.bottom * (resolution / screenResolution));
+
+                IEnvelope pixelBoundsEnv = new EnvelopeClass();
+                pixelBoundsEnv.PutCoords(exportRect.left, exportRect.top, exportRect.right, exportRect.bottom);
+                exporter.PixelBounds = pixelBoundsEnv;
+
+                int hDC = exporter.StartExporting();
+                activeView.Output(hDC, Convert.ToInt32(resolution), ref exportRect, null, null);
+                exporter.FinishExporting();
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                exporter.Cleanup();
+            }
+        }
+
+        private void btnImportIMG_Click(object sender, EventArgs e)
+        {
+            IMap map = axMapControl1.Map;
+            MapExport(map, "A.jpg", 300);
+        }
+        #endregion
+
         #region 公共方法
         //使用IMap.SelectFeature方法对地图中的要素进行查询
         void SearchHightlight(IMap _pMap, IFeatureLayer _pFeatureLayer, IQueryFilter _pQuery, bool _Bool)
@@ -1127,6 +1214,124 @@ namespace ArcGISFormsApp1
 
 
         #endregion
+
+
+        //空间查询 第一个参数为面数据,第二个参数为点数据,第三个为输出的表 
+        public void StatisticPointCount(IFeatureClass _pPolygonFClass, IFeatureClass _pPointFClass, ITable _pTable)
+        {
+            IFeatureCursor pPolyCursor = _pPolygonFClass.Search(null, false);
+            IFeature pPolyFeature = pPolyCursor.NextFeature();
+
+            while (pPolyFeature != null)
+            {
+                IGeometry pPolGeo = pPolyFeature.Shape;
+                int Count = 0;
+                ISpatialFilter spatialFilter = new SpatialFilterClass();
+                spatialFilter.Geometry = pPolGeo;
+                spatialFilter.SpatialRel = esriSpatialRelEnum.esriSpatialRelContains;
+
+                IFeatureCursor pPointCur = _pPointFClass.Search(spatialFilter, false);
+
+                if (pPointCur != null)
+                {
+                    IFeature pPointFeature = pPointCur.NextFeature();
+
+                    while (pPointFeature != null)
+                    {
+                        pPointFeature = pPointCur.NextFeature();
+                        Count++;
+                    }
+                }
+                if (Count != 0)
+                {
+                    IRow pRow = _pTable.CreateRow();
+                    pRow.set_Value(1, pPolyFeature.get_Value(0));
+                    pRow.set_Value(2, Count);
+                    pRow.Store();
+                }
+                pPolyFeature = pPolyCursor.NextFeature();
+            }
+        }
+        /// <summary>
+        /// 高亮条件查询结果
+        /// </summary>
+        /// <param name="where"></param>
+        public void SelectAndHighlight(string where= "TYPE='test'")
+        {
+            IMap pMap = axMapControl1.Map;
+            IFeatureLayer pFeaturelayer = pMap.Layer[0] as IFeatureLayer;
+            IFeatureSelection pFeatureSelection = pFeaturelayer as IFeatureSelection;
+            IQueryFilter pQuery = new QueryFilterClass();
+            pQuery.WhereClause = where;//条件从句
+            pFeatureSelection.SelectFeatures(pQuery, esriSelectionResultEnum.esriSelectionResultNew, false);
+            axMapControl1.ActiveView.Refresh();
+        }
+
+        /// <summary>  
+        /// 通过IFeature.Delete方法删除要素  
+        /// </summary>  
+        /// <param name="pFeatureclass">要素类</param>  
+        /// <param name="strWhereClause">查询条件</param>  
+        public static void DeleteFeatureByIFeature(IFeatureClass pFeatureclass, string strWhereClause)
+        {
+            IQueryFilter pQueryFilter = new QueryFilterClass();
+            pQueryFilter.WhereClause = strWhereClause;
+            IFeatureCursor pFeatureCursor = pFeatureclass.Search(pQueryFilter, false);
+            IFeature pFeature = pFeatureCursor.NextFeature();
+            while (pFeature != null)
+            {
+                pFeature.Delete();
+                pFeature = pFeatureCursor.NextFeature();
+            }
+        }
+
+        /// <summary>  
+        /// 通过IFeatureCursor.DeleteFeature方法删除要素  
+        /// </summary>  
+        /// <param name="pFeatureclass">要素类</param>  
+        /// <param name="strWhereClause">查询条件</param>  
+        public static void DeleteFeatureByIFeatureCursor(IFeatureClass pFeatureclass, string strWhereClause)
+        {
+            IQueryFilter pQueryFilter = new QueryFilterClass();
+            pQueryFilter.WhereClause = strWhereClause;
+            IFeatureCursor pFeatureCursor = pFeatureclass.Update(pQueryFilter, false);
+            IFeature pFeature = pFeatureCursor.NextFeature();
+            while (pFeature != null)
+            {
+                pFeatureCursor.DeleteFeature();
+                pFeature = pFeatureCursor.NextFeature();
+            }
+        }
+
+
+        /// <summary>  
+        /// 通过ITable.DeleteSearchedRows方法删除要素  
+        /// </summary>  
+        /// <param name="pFeatureclass">要素类</param>  
+        /// <param name="strWhereClause">查询条件</param>  
+        public static void DeleteFeatureByITable(IFeatureClass pFeatureclass, string strWhereClause)
+        {
+            IQueryFilter pQueryFilter = new QueryFilterClass();
+            pQueryFilter.WhereClause = strWhereClause;
+            ITable pTable = pFeatureclass as ITable;
+            pTable.DeleteSearchedRows(pQueryFilter);
+        }
+
+
+      
+        //axMapControl1.CurrentTool = null;
+        ////ControlsMapZoomOutTool
+        //axMapControl1.MousePointer = esriControlsMousePointer.esriPointerZoomIn;
+      
+
+        private void btnSelectFeature_Click(object sender, EventArgs e)
+        {
+            axMapControl1.CurrentTool = null;
+            ControlsSelectFeaturesTool pTool = new ControlsSelectFeaturesToolClass();
+            pTool.OnCreate(axMapControl1.Object);
+            axMapControl1.CurrentTool = pTool as ITool;
+
+        }
 
      
     }

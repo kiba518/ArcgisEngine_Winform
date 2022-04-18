@@ -35,6 +35,8 @@
             this.打开表格ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.btnImportMDB = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.btnImportIMG = new System.Windows.Forms.Button();
+            this.btnSelectFeature = new System.Windows.Forms.Button();
             this.btnDelAllTable = new System.Windows.Forms.Button();
             this.btnAddDataset = new System.Windows.Forms.Button();
             this.btnDelTable = new System.Windows.Forms.Button();
@@ -104,6 +106,8 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.btnImportIMG);
+            this.panel1.Controls.Add(this.btnSelectFeature);
             this.panel1.Controls.Add(this.btnDelAllTable);
             this.panel1.Controls.Add(this.btnAddDataset);
             this.panel1.Controls.Add(this.btnDelTable);
@@ -124,6 +128,26 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(179, 715);
             this.panel1.TabIndex = 9;
+            // 
+            // btnImportIMG
+            // 
+            this.btnImportIMG.Location = new System.Drawing.Point(3, 475);
+            this.btnImportIMG.Name = "btnImportIMG";
+            this.btnImportIMG.Size = new System.Drawing.Size(170, 23);
+            this.btnImportIMG.TabIndex = 21;
+            this.btnImportIMG.Text = "导出图片";
+            this.btnImportIMG.UseVisualStyleBackColor = true;
+            this.btnImportIMG.Click += new System.EventHandler(this.btnImportIMG_Click);
+            // 
+            // btnSelectFeature
+            // 
+            this.btnSelectFeature.Location = new System.Drawing.Point(3, 446);
+            this.btnSelectFeature.Name = "btnSelectFeature";
+            this.btnSelectFeature.Size = new System.Drawing.Size(170, 23);
+            this.btnSelectFeature.TabIndex = 20;
+            this.btnSelectFeature.Text = "选择要素工具";
+            this.btnSelectFeature.UseVisualStyleBackColor = true;
+            this.btnSelectFeature.Click += new System.EventHandler(this.btnSelectFeature_Click);
             // 
             // btnDelAllTable
             // 
@@ -394,6 +418,8 @@
         private System.Windows.Forms.Button btnDelTable;
         private System.Windows.Forms.Button btnAddDataset;
         private System.Windows.Forms.Button btnDelAllTable;
+        private System.Windows.Forms.Button btnSelectFeature;
+        private System.Windows.Forms.Button btnImportIMG;
     }
 }
 

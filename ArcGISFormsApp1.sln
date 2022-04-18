@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.645
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31205.134
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArcGISFormsApp1", "ArcGISFormsApp1\ArcGISFormsApp1.csproj", "{4EB04AEC-01E6-4F8D-9AA1-2FC3EEA920F1}"
 EndProject
