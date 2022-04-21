@@ -2,12 +2,14 @@
 using ESRI.ArcGIS.Controls;
 using ESRI.ArcGIS.DataSourcesFile;
 using ESRI.ArcGIS.DataSourcesGDB;
+using ESRI.ArcGIS.DataSourcesRaster;
 using ESRI.ArcGIS.Display;
 using ESRI.ArcGIS.esriSystem;
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.Geometry;
 using ESRI.ArcGIS.Output;
 using ESRI.ArcGIS.SystemUI;
+using stdole;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -36,6 +38,7 @@ namespace ArcGISFormsApp1
         public Form1()
         {
             InitializeComponent();
+            
         }
         #region 导入MXD 
         private void ImportMXD_Click(object sender, EventArgs e)
@@ -1333,7 +1336,236 @@ namespace ArcGISFormsApp1
 
         }
 
+        public IRasterDataset CreateRasterDataset(string pRasterFolderPath, string pFileName, string pRasterType, ISpatialReference pSpr)
+        {
+            IRasterWorkspace2 pRasterWs = workspace as IRasterWorkspace2;
+
+            IPoint pPoint = new PointClass();
+            pPoint.PutCoords(15.0, 15.0);
+
+            int pWidth = 300;
+            int pHeight = 300;
+            double xCell = 30;
+            double yCell = 30;
+            int NumBand = 1;
+
+            IRasterDataset pRasterDataset = pRasterWs.CreateRasterDataset(pFileName, pRasterType, pPoint, pWidth, pHeight, xCell, yCell, NumBand, rstPixelType.PT_UCHAR, pSpr, true);
+
+            IRasterBandCollection pRasterBands = (IRasterBandCollection)pRasterDataset;
+
+            IRasterBand pRasterBand = pRasterBands.Item(0);
+            IRasterProps pRasterProps = (IRasterProps)pRasterBand;
+
+            pRasterProps.NoDataValue = 255;
+
+            IRaster pRaster = pRasterDataset.CreateDefaultRaster();
+
+            IPnt pPnt = new PntClass();
+            pPnt.SetCoords(30, 30);
+
+            IRaster2 pRaster2 = pRaster as IRaster2;
+            IRasterEdit pRasterEdit = (IRasterEdit)pRaster2;
+
+            IRasterCursor pRasterCursor = pRaster2.CreateCursorEx(pPnt);
+
+            do
+            {
+                IPixelBlock3 pPixelblock = pRasterCursor.PixelBlock as IPixelBlock3;
+
+                System.Array pixels = (System.Array)pPixelblock.get_PixelData(0);
+
+                for (int i = 0; i < pPixelblock.Width; i++)
+
+                    for (int j = 0; j < pPixelblock.Height; j++)
+                        if (i == j)
+
+                            pixels.SetValue(Convert.ToByte(255), i, j);
+                        else
+                            pixels.SetValue(Convert.ToByte((i * j + 30) / 255), i, j);
+
+                pPixelblock.set_PixelData(0, (System.Array)pixels);
+                IPnt pUpperLeft = pRasterCursor.TopLeft;
+
+                pRasterEdit.Write(pUpperLeft, (IPixelBlock)pPixelblock);
+
+            }
+            while (pRasterCursor.Next());
+
+            System.Runtime.InteropServices.Marshal.ReleaseComObject(pRasterEdit);
+
+            return pRasterDataset;
+        }
+
+        #region  布局视图
+
      
+        private void btnShowLayout_Click(object sender, EventArgs e)
+        {
+            IObjectCopy objectCopy = new ObjectCopy();//对象拷贝接口
+            object copyFromMap = axMapControl1.Map;//地图对象
+            object copyMap = objectCopy.Copy(copyFromMap);//将axMapControl1的地图对象拷贝
+            object copyToMap = axPageLayoutControl1.ActiveView.FocusMap;//axPageLayoutControl1活动视图中的地图
+            objectCopy.Overwrite(copyMap, ref copyToMap);//将axMapControl1地图对象覆盖axPageLayout1当前地图
+
+          
+            AddNorthArrow(axPageLayoutControl1.ActiveView as IPageLayout, axPageLayoutControl1.ActiveView.FocusMap);
+            AddLegend(axPageLayoutControl1.ActiveView as IPageLayout, axPageLayoutControl1.ActiveView.FocusMap);
+            //AddScaleBar(axPageLayoutControl1.ActiveView as IPageLayout, axPageLayoutControl1.ActiveView.FocusMap);
+        }
+        //显示指北针
+        public void AddNorthArrow(ESRI.ArcGIS.Carto.IPageLayout pageLayout, ESRI.ArcGIS.Carto.IMap map)
+        {
+
+            if (pageLayout == null || map == null)
+            {
+                return;
+            }
+            ESRI.ArcGIS.Geometry.IEnvelope envelope = new ESRI.ArcGIS.Geometry.EnvelopeClass();
+            envelope.PutCoords(0.2, 0.2, 5, 5); //  Specify the location and size of the north arrow
+
+            ESRI.ArcGIS.esriSystem.IUID uid = new ESRI.ArcGIS.esriSystem.UIDClass();
+            uid.Value = "esriCarto.MarkerNorthArrow";
+
+            // Create a Surround. Set the geometry of the MapSurroundFrame to give it a location
+            // Activate it and add it to the PageLayout's graphics container
+            ESRI.ArcGIS.Carto.IGraphicsContainer graphicsContainer = pageLayout as ESRI.ArcGIS.Carto.IGraphicsContainer; // Dynamic Cast
+            ESRI.ArcGIS.Carto.IActiveView activeView = pageLayout as ESRI.ArcGIS.Carto.IActiveView; // Dynamic Cast
+            ESRI.ArcGIS.Carto.IFrameElement frameElement = graphicsContainer.FindFrame(map);
+            ESRI.ArcGIS.Carto.IMapFrame mapFrame = frameElement as ESRI.ArcGIS.Carto.IMapFrame; // Dynamic Cast
+            ESRI.ArcGIS.Carto.IMapSurroundFrame mapSurroundFrame = mapFrame.CreateSurroundFrame(uid as ESRI.ArcGIS.esriSystem.UID, null); // Dynamic Cast
+            ESRI.ArcGIS.Carto.IElement element = mapSurroundFrame as ESRI.ArcGIS.Carto.IElement; // Dynamic Cast
+            element.Geometry = envelope;
+            element.Activate(activeView.ScreenDisplay);
+            graphicsContainer.AddElement(element, 0);
+            ESRI.ArcGIS.Carto.IMapSurround mapSurround = mapSurroundFrame.MapSurround;
+
+            // Change out the default north arrow
+            ESRI.ArcGIS.Carto.IMarkerNorthArrow markerNorthArrow = mapSurround as ESRI.ArcGIS.Carto.IMarkerNorthArrow; // Dynamic Cast
+            ESRI.ArcGIS.Display.IMarkerSymbol markerSymbol = markerNorthArrow.MarkerSymbol;
+            ESRI.ArcGIS.Display.ICharacterMarkerSymbol characterMarkerSymbol = markerSymbol as ESRI.ArcGIS.Display.ICharacterMarkerSymbol; // Dynamic Cast
+            characterMarkerSymbol.CharacterIndex = 200; // change the symbol for the North Arrow
+            markerNorthArrow.MarkerSymbol = characterMarkerSymbol;
+        }
+       
+       
+      
+        //图例
+        public void AddLegend(ESRI.ArcGIS.Carto.IPageLayout pageLayout, ESRI.ArcGIS.Carto.IMap map)
+        {
+            ESRI.ArcGIS.Carto.IGraphicsContainer graphicsContainer = pageLayout as ESRI.ArcGIS.Carto.IGraphicsContainer; // Dynamic Cast
+            ESRI.ArcGIS.Carto.IFrameElement frameElement = graphicsContainer.FindFrame(map);
+            ESRI.ArcGIS.Carto.IMapFrame mapFrame = frameElement as ESRI.ArcGIS.Carto.IMapFrame; // Dynamic Cast
+            ESRI.ArcGIS.esriSystem.IUID uid = new ESRI.ArcGIS.esriSystem.UIDClass();
+            uid.Value = "esriCarto.Legend";
+            ESRI.ArcGIS.Carto.IMapSurroundFrame mapSurroundFrame = mapFrame.CreateSurroundFrame(uid as ESRI.ArcGIS.esriSystem.UID, null); // Dynamic Cast
+            ESRI.ArcGIS.Carto.IMapSurround mapSurround = mapSurroundFrame.MapSurround;
+            ILegend legend = mapSurround as ILegend;
+            legend.AutoAdd = true;
+            legend.AutoReorder = true;
+            legend.AutoVisibility = true;
+            legend.Title = "图例";
+
+            //ESRI.ArcGIS.Geometry.IEnvelope envelope = axPageLayoutControl1.TrackRectangle();
+            ESRI.ArcGIS.Geometry.IEnvelope envelope = new ESRI.ArcGIS.Geometry.EnvelopeClass();
+            envelope.PutCoords(17.5, 1.5, 20, 25); //  Specify the location and size of the north arrow
+            ESRI.ArcGIS.Carto.IElement element = mapSurroundFrame as ESRI.ArcGIS.Carto.IElement; // Dynamic Cast
+            element.Geometry = envelope;
+            graphicsContainer.AddElement(element, 0);
+        }
+        public void AddScaleBar(ESRI.ArcGIS.Carto.IPageLayout pageLayout, ESRI.ArcGIS.Carto.IMap map)
+        {
+            ESRI.ArcGIS.Carto.IGraphicsContainer graphicsContainer = pageLayout as ESRI.ArcGIS.Carto.IGraphicsContainer; // Dynamic Cast
+            ESRI.ArcGIS.Carto.IFrameElement frameElement = graphicsContainer.FindFrame(map);
+            ESRI.ArcGIS.Carto.IMapFrame mapFrame = frameElement as ESRI.ArcGIS.Carto.IMapFrame; // Dynamic Cast
+            ESRI.ArcGIS.esriSystem.IUID uid = new ESRI.ArcGIS.esriSystem.UIDClass();
+            uid.Value = "esriCarto.ScaleBar";
+            ESRI.ArcGIS.Carto.IMapSurroundFrame mapSurroundFrame = mapFrame.CreateSurroundFrame(uid as ESRI.ArcGIS.esriSystem.UID, null); // Dynamic Cast
+             
+            IScaleBar scaleBar = new ScaleLine();
+
+            //scaleBar = new AlternatingScaleBar(); 
+            //scaleBar = new DoubleAlternatingScaleBar(); 
+            //scaleBar = new HollowScaleBar(); 
+            //scaleBar = new ScaleLine(); 
+            //scaleBar = new SingleDivisionScaleBar(); 
+            //scaleBar = new SteppedScaleLine();
+
+
+            //pScaleBar.BarHeight = 2;
+            scaleBar.DivisionsBeforeZero = 0;//设置比例尺原点左侧显示的段数 
+             
+            //scaleBar.Division = 4;//设置比例尺的分割单位。
+            scaleBar.Divisions = 1;//设置比例尺的总段数。
+            scaleBar.LabelGap = 1;//和标签之间的垂直间隔（1 / 72英寸）
+            scaleBar.LabelPosition = esriVertPosEnum.esriBelow;//比例尺数字标签的显示位置
+            scaleBar.Map = map;
+            scaleBar.Name = "比例尺";
+            scaleBar.Subdivisions = 0;//设置主比例尺分为几个子段
+
+            scaleBar.LabelFrequency = esriScaleBarFrequency.esriScaleBarMajorDivisions;
+            scaleBar.UnitLabelGap = 1;
+            scaleBar.UnitLabelPosition = esriScaleBarPos.esriScaleBarAfterLabels;//设置单位标签显示的位置
+            scaleBar.Units = esriUnits.esriMeters;//设置比例尺的单位
+
+            scaleBar.UnitLabel = "米";
+
+            mapSurroundFrame.MapSurround = scaleBar;
+            IElementProperties elementPro = mapSurroundFrame as IElementProperties;
+            elementPro.Name = "ScaleBar"; IElement pEle = mapSurroundFrame as IElement;
+            IEnvelope env = new Envelope() as IEnvelope;
+            IElement element = (IElement)mapFrame;
+            IEnvelope envelope = element.Geometry.Envelope;
+            //根据名字获取地图对象中的图层 pEnv = new Envelope() as IEnvelope;
+            env.PutCoords(2.0435840871, 1.569833139, 20.362010057, 6.5666918);
+            pEle.Geometry = env;
+            graphicsContainer.AddElement(pEle, 0);
+
+        }
+        /// <summary>
+        /// 添加文本
+        /// </summary>
+        /// <param name="axPageLayoutControl1">目标PageLayoutControl的Name属性</param>
+        /// <param name="fontsize">字体尺寸</param>
+        /// <param name="thimaticMapName">图名</param>
+        private void AddTextElement(AxPageLayoutControl axPageLayoutControl1, decimal fontsize, string thimaticMapName)
+        {
+            //创建PageLayout对象
+            IPageLayout pPageLayout = axPageLayoutControl1.PageLayout;
+            //将PageLayout强转成IActiveView
+            IActiveView pAV = (IActiveView)pPageLayout;
+            //将PageLayout强转成IGraphicsContainer
+            IGraphicsContainer graphicsContainer = (IGraphicsContainer)pPageLayout;
+            //实例化文本元素
+            ITextElement pTextElement = new TextElementClass();
+            //实例化字体元素
+            IFontDisp pFont = new StdFontClass() as IFontDisp;
+            pFont.Bold = true;
+            pFont.Name = "宋体";
+            pFont.Size = fontsize;
+            //实例化IRgbColor
+            IRgbColor pColor = new RgbColorClass();
+            pColor.Red = 0;
+            pColor.Green = 0;
+            pColor.Blue = 0;
+            //实例化文本符号
+            ITextSymbol pTextSymbol = new TextSymbolClass();
+            pTextSymbol.Color = (IColor)pColor;
+            pTextSymbol.Font = pFont;
+            //赋值元素文本和符号
+            pTextElement.Text = thimaticMapName;
+            pTextElement.Symbol = pTextSymbol;
+            //实例化一个点
+            IPoint pPoint = new PointClass();
+            pPoint.X = 0;
+            pPoint.Y = 0;
+            //实例化一个元素
+            IElement pElement = (IElement)pTextElement;
+            pElement.Geometry = (IGeometry)pPoint;
+            graphicsContainer.AddElement(pElement, 0);
+            //真正实现部分刷新
+            pAV.PartialRefresh(esriViewDrawPhase.esriViewGraphics, null, null);
+        }
+        #endregion
     }
 
 }

@@ -59,6 +59,8 @@
             this.axMapControl1 = new ESRI.ArcGIS.Controls.AxMapControl();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.axPageLayoutControl1 = new ESRI.ArcGIS.Controls.AxPageLayoutControl();
+            this.btnShowLayout = new System.Windows.Forms.Button();
             this.contextMenuStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -68,6 +70,7 @@
             this.panel4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.axMapControl1)).BeginInit();
             this.statusStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.axPageLayoutControl1)).BeginInit();
             this.SuspendLayout();
             // 
             // ImportMXD
@@ -106,6 +109,7 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.btnShowLayout);
             this.panel1.Controls.Add(this.btnImportIMG);
             this.panel1.Controls.Add(this.btnSelectFeature);
             this.panel1.Controls.Add(this.btnDelAllTable);
@@ -329,6 +333,7 @@
             // 
             // panel4
             // 
+            this.panel4.Controls.Add(this.axPageLayoutControl1);
             this.panel4.Controls.Add(this.axMapControl1);
             this.panel4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel4.Location = new System.Drawing.Point(418, 35);
@@ -338,11 +343,10 @@
             // 
             // axMapControl1
             // 
-            this.axMapControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.axMapControl1.Location = new System.Drawing.Point(0, 0);
+            this.axMapControl1.Location = new System.Drawing.Point(6, 6);
             this.axMapControl1.Name = "axMapControl1";
             this.axMapControl1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("axMapControl1.OcxState")));
-            this.axMapControl1.Size = new System.Drawing.Size(966, 658);
+            this.axMapControl1.Size = new System.Drawing.Size(459, 649);
             this.axMapControl1.TabIndex = 0;
             this.axMapControl1.OnMouseDown += new ESRI.ArcGIS.Controls.IMapControlEvents2_Ax_OnMouseDownEventHandler(this.axMapControl1_OnMouseDown);
             this.axMapControl1.OnMouseMove += new ESRI.ArcGIS.Controls.IMapControlEvents2_Ax_OnMouseMoveEventHandler(this.axMapControl1_OnMouseMove);
@@ -362,6 +366,24 @@
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             this.toolStripStatusLabel1.Size = new System.Drawing.Size(131, 17);
             this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
+            // 
+            // axPageLayoutControl1
+            // 
+            this.axPageLayoutControl1.Location = new System.Drawing.Point(471, 6);
+            this.axPageLayoutControl1.Name = "axPageLayoutControl1";
+            this.axPageLayoutControl1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("axPageLayoutControl1.OcxState")));
+            this.axPageLayoutControl1.Size = new System.Drawing.Size(476, 649);
+            this.axPageLayoutControl1.TabIndex = 1;
+            // 
+            // btnShowLayout
+            // 
+            this.btnShowLayout.Location = new System.Drawing.Point(3, 504);
+            this.btnShowLayout.Name = "btnShowLayout";
+            this.btnShowLayout.Size = new System.Drawing.Size(170, 23);
+            this.btnShowLayout.TabIndex = 22;
+            this.btnShowLayout.Text = "显示布局视图";
+            this.btnShowLayout.UseVisualStyleBackColor = true;
+            this.btnShowLayout.Click += new System.EventHandler(this.btnShowLayout_Click);
             // 
             // Form1
             // 
@@ -385,6 +407,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.axMapControl1)).EndInit();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.axPageLayoutControl1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -420,6 +443,8 @@
         private System.Windows.Forms.Button btnDelAllTable;
         private System.Windows.Forms.Button btnSelectFeature;
         private System.Windows.Forms.Button btnImportIMG;
+        private ESRI.ArcGIS.Controls.AxPageLayoutControl axPageLayoutControl1;
+        private System.Windows.Forms.Button btnShowLayout;
     }
 }
 
