@@ -7,7 +7,9 @@ using ESRI.ArcGIS.Display;
 using ESRI.ArcGIS.esriSystem;
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.Geometry;
+using ESRI.ArcGIS.GISClient;
 using ESRI.ArcGIS.Output;
+using ESRI.ArcGIS.Server;
 using ESRI.ArcGIS.SystemUI;
 using stdole;
 using System;
@@ -15,12 +17,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+
 
 namespace ArcGISFormsApp1
 {
@@ -647,7 +652,15 @@ namespace ArcGISFormsApp1
             }
 
         }
-
+        private void 缩放至图层ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (pGlobalFeatureLayer != null)
+            {
+                axMapControl1.ActiveView.FullExtent = pGlobalFeatureLayer.AreaOfInterest;
+                axMapControl1.ActiveView.Refresh();
+                axTOCControl1.Update();
+            }
+        }
         #endregion 
 
         #region 鼠标移动 地图(axMapControl1)下方显示坐标 
@@ -1565,7 +1578,606 @@ namespace ArcGISFormsApp1
             //真正实现部分刷新
             pAV.PartialRefresh(esriViewDrawPhase.esriViewGraphics, null, null);
         }
+
         #endregion
+
+
+        #region 发布服务
+        private void btnPublish_Click(object sender, EventArgs e)
+        {
+          
+        } 
+        #endregion
+
+
+        #region 连接arcgisServer 
+        public string token = "";
+        private void btnConnServer_Click(object sender, EventArgs e)
+        {
+            ConnectAGS("http://192.168.50.28:6080/arcgis/admin", "admin", "admin");
+        }
+        public IServerObjectAdmin ConnectAGS(string host, string username, string password)
+        {
+            try
+            {
+                IPropertySet propertySet = new PropertySetClass();
+                propertySet.SetProperty("url", host);
+                propertySet.SetProperty("ConnectionMode", esriAGSConnectionMode.esriAGSConnectionModeAdmin);
+                propertySet.SetProperty("ServerType", esriAGSServerType.esriAGSServerTypeDiscovery);
+                propertySet.SetProperty("user", username);
+                propertySet.SetProperty("password", password);
+                propertySet.SetProperty("ALLOWINSECURETOKENURL", true); //设置为false会弹出一个警告对话框
+
+
+                IAGSServerConnectionName3 connectName = new AGSServerConnectionNameClass() as IAGSServerConnectionName3;//10.1新增接口 
+                connectName.ConnectionProperties = propertySet;
+                IAGSServerConnectionAdmin agsAdmin = ((IName)connectName).Open() as IAGSServerConnectionAdmin;
+                token = GenerateAGSToken_RESTAdmin(host, "arcgis", "arcgis");
+                return agsAdmin.ServerObjectAdmin;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("连接失败: {0}. Message: {1}", host, ex.Message);
+                return null;
+
+            }
+
+        }
+        public string GenerateAGSToken_RESTAdmin(string restAdmin, string username, string password)
+        {
+            try
+            {
+                if (restAdmin.EndsWith("\\"))
+                {
+                    restAdmin = restAdmin.Substring(0, restAdmin.Length - 1);
+                }
+                if (restAdmin.EndsWith("services"))
+                {
+                    restAdmin = restAdmin.Substring(0, restAdmin.Length - 9);
+                }
+
+                string loginUrl = restAdmin + "/generateToken";
+                WebRequest request = WebRequest.Create(loginUrl);
+                request.Method = "POST";
+                string credential = "username=" + username + "&password=" + password + "&client=requestip&expiration=&f=json";
+
+                byte[] content = Encoding.UTF8.GetBytes(credential);
+                request.ContentLength = content.Length;
+                request.ContentType = "application/x-www-form-urlencoded";
+                Stream requestStream = request.GetRequestStream();
+                requestStream.Write(content, 0, content.Length);
+                requestStream.Close();
+                WebResponse response = request.GetResponse();
+                Stream responseStream = response.GetResponseStream();
+                StreamReader reader = new StreamReader(responseStream);
+                string result = reader.ReadToEnd();
+                IJSONReader2 jsonReader = new JSONReaderClass();
+                IJSONObject obj = jsonReader.ParseJSONString(result) as IJSONObject;
+                string token;
+                if (obj.TryGetValueAsString("token", out token))
+                {
+
+                }
+                return token;
+            }
+            catch (Exception ex)
+            {
+                return "";
+            }
+        }
+        #endregion
+
+        #region MyRegion
+
+
+
+
+        public bool DeleteService_RESTAdmin(string restAdmin, string username, string password, string serviceName, string pType, string pFolder) 
+        {
+
+            try 
+            {
+
+                //string token = GenerateAGSToken_RESTAdmin(restAdmin, username, password);
+
+                restAdmin = restAdmin.EndsWith("/") ? restAdmin.Substring(0, restAdmin.Length - 1) : restAdmin;
+
+                string serviceUrl = restAdmin + "/services" + pFolder + "/" + serviceName + "." + pType + "/delete";
+
+                WebRequest request = WebRequest.Create(serviceUrl);
+
+                string postcontent = "f=pjson&token=" + token;
+
+                Byte[] content = Encoding.UTF8.GetBytes(postcontent);
+
+                request.ContentLength = content.Length;
+
+                request.ContentType = "application/x-www-form-urlencoded";
+
+                request.Method = "POST";
+
+                Stream requestStream = request.GetRequestStream();
+
+                requestStream.Write(content, 0, content.Length);
+
+                requestStream.Close();
+
+                WebResponse response = request.GetResponse();
+
+                Stream responseStream = response.GetResponseStream();
+
+                StreamReader reader = new StreamReader(responseStream);
+
+                string result = reader.ReadToEnd();
+
+                return result.Contains("success");
+
+            }
+
+            catch { return false; }
+
+        }
+        public bool StopService_RESTAdmin(string restAdmin, string username, string password, string serviceName, string pType, string pFolder) 
+        {
+
+            try
+
+            {
+
+                // string token = GenerateAGSToken_RESTAdmin(restAdmin, username, password);
+
+                restAdmin = restAdmin.EndsWith("/") ? restAdmin.Substring(0, restAdmin.Length - 1) : restAdmin;
+
+                if (pFolder.Length > 0)
+
+                {
+
+                    pFolder = pFolder.StartsWith("/") ? pFolder : "/" + pFolder;
+
+                }
+
+                string serviceUrl = restAdmin + "/services" + pFolder + "/" + serviceName + "." + pType + "/stop";
+
+                WebRequest request = WebRequest.Create(serviceUrl);
+
+                string postcontent = "f=pjson&token=" + token;
+
+                Byte[] content = Encoding.UTF8.GetBytes(postcontent);
+
+                request.ContentLength = content.Length;
+
+                request.ContentType = "application/x-www-form-urlencoded";
+
+                request.Method = "POST";
+
+                Stream requestStream = request.GetRequestStream();
+
+                requestStream.Write(content, 0, content.Length);
+
+                requestStream.Close();
+
+                WebResponse response = request.GetResponse();
+
+                Stream responseStream = response.GetResponseStream();
+
+                StreamReader reader = new StreamReader(responseStream);
+
+                string result = reader.ReadToEnd();
+
+                return result.Contains("success");
+            }
+
+            catch { return false; }
+
+        }
+        public bool StartService_RESTAdmin(string restAdmin, string username, string password, string serviceName, string pServiceType, string pFolder)
+
+        {
+
+            try 
+            { 
+                // string token = GenerateAGSToken_RESTAdmin(restAdmin, username,password);
+
+                restAdmin = restAdmin.EndsWith("/") ? restAdmin.Substring(0, restAdmin.Length - 1) : restAdmin;
+
+                if (pFolder.Length > 0)
+
+                {
+
+                    pFolder = pFolder.StartsWith("/") ? pFolder : "/" + pFolder;
+
+                }
+
+                string serviceUrl = restAdmin + "/services" + pFolder + "/" + serviceName + "." + pServiceType + "/start";//服务名称+"."+类型
+
+                WebRequest request = WebRequest.Create(serviceUrl);
+
+                string postcontent = "f=pjson&token=" + token;
+
+                Byte[] content = Encoding.UTF8.GetBytes(postcontent);
+
+                request.ContentLength = content.Length;
+
+                request.ContentType = "application/x-www-form-urlencoded";
+
+                request.Method = "POST";
+
+                Stream requestStream = request.GetRequestStream();
+
+                requestStream.Write(content, 0, content.Length);
+
+                requestStream.Close();
+
+                WebResponse response = request.GetResponse();
+
+                Stream responseStream = response.GetResponseStream();
+
+                StreamReader reader = new StreamReader(responseStream);
+
+                string result = reader.ReadToEnd();
+
+                return result.Contains("success");
+
+            }
+
+            catch { return false; }
+
+        } 
+        public bool GetStatus_RESTAdmin(string restAdmin, string username, string password, string serviceName, string pServiceType, string pFolder) 
+        {
+
+            try 
+            {
+
+                // string token = GenerateAGSToken_RESTAdmin(restAdmin, username,password);
+
+                restAdmin = restAdmin.EndsWith("/") ? restAdmin.Substring(0, restAdmin.Length - 1) : restAdmin;
+
+                string serviceUrl = restAdmin + "/services" + pFolder + "/" + serviceName + "." + pServiceType + "/status";//服务名称+"."+类型
+
+                WebRequest request = WebRequest.Create(serviceUrl);
+
+                string postcontent = "f=pjson&token=" + token;
+
+                Byte[] content = Encoding.UTF8.GetBytes(postcontent);
+
+                request.ContentLength = content.Length;
+
+                request.ContentType = "application/x-www-form-urlencoded";
+
+                request.Method = "POST";
+
+                Stream requestStream = request.GetRequestStream();
+
+                requestStream.Write(content, 0, content.Length);
+
+                requestStream.Close();
+
+                WebResponse response = request.GetResponse();
+
+                Stream responseStream = response.GetResponseStream();
+
+                StreamReader reader = new StreamReader(responseStream); 
+
+                string result = reader.ReadToEnd();
+
+                return result.Contains("STOPPED");
+
+            } 
+            catch { return false; }
+
+        }
+        private void ChangInstance(IServerObjectAdmin pSAdmin, IServerObjectConfiguration pConf, int pMin, int pMax)
+        {
+
+            IEnumServerObjectConfiguration pEnServerConf = pSAdmin.GetConfigurations();
+            IServerObjectConfiguration pSConf = pEnServerConf.Next();
+            IServerObjectConfiguration pSOConfig = null;
+
+            while (pSConf != null)
+            {
+
+                if (pSConf.Name == pConf.Name && pSConf.TypeName == pConf.TypeName)
+                {
+
+                    pSOConfig = pSConf;
+
+                    break;
+
+                }
+                pSConf = pEnServerConf.Next();
+
+            }
+            if (pSConf != null)
+            {
+
+                pSConf.MinInstances = pMin;
+
+                pSOConfig.MaxInstances = pMax;
+
+                pSAdmin.UpdateConfiguration(pSOConfig);
+
+            }
+
+        }
+
+        Dictionary<string,Dictionary<string,string>> serviceType = new Dictionary<string, Dictionary<string, string>>();
+
+        Dictionary<string, string> dic = new Dictionary<string, string>();
+
+        public Dictionary<string, Dictionary<string, string>> ListServices_RESTAdmin(string restAdmin, string username, string password, string folder) 
+        {
+
+            try 
+            {
+
+                //使用WebRequest 发送请求 
+                restAdmin = restAdmin.EndsWith("/") ? restAdmin.Substring(0, restAdmin.Length - 1) : restAdmin; 
+                string serviceUrl = restAdmin + "/" + folder;
+
+                WebRequest request = WebRequest.Create(serviceUrl); 
+                string postcontent = "f=json&token=" + token;
+
+                // json格式 
+                Byte[] content = Encoding.UTF8.GetBytes(postcontent); 
+                request.ContentLength = content.Length; 
+                request.ContentType = "application/x-www-form-urlencoded";
+
+                request.Method = "POST";
+
+                Stream requestStream = request.GetRequestStream();
+
+                requestStream.Write(content, 0, content.Length);
+
+                requestStream.Close();
+
+                WebResponse response = request.GetResponse();
+
+                Stream responseStream = response.GetResponseStream();
+
+                StreamReader reader = new StreamReader(responseStream);
+
+                string result = reader.ReadToEnd();
+
+                int index = result.IndexOf("services");
+
+                Dictionary<string, string> pSer = new Dictionary<string, string>();
+
+                IJSONReader2 pJsonReader = new JSONReaderClass(); 
+                IJSONObject pOb = pJsonReader.ParseJSONString(result) as IJSONObject;
+                //"folders":["BusSimulation","System","Utilities"]
+
+                //根目录 
+                serviceType.Add("/", new Dictionary<string, string>());
+
+                IJSONArray pFodArr; 
+                if (pOb.TryGetValueAsArray("folders", out pFodArr)) 
+                { 
+                    for (int i = 0; i < pFodArr.Count; i++) 
+                    { 
+                        serviceType.Add(pFodArr.get_Value(i).ToString(), new Dictionary<string, string>()); 
+                    } 
+                }
+
+                if (pOb.MemberExists("services")) 
+                {
+
+                    object pJs; 
+                    if (pOb.TryGetValue("services", out pJs)) 
+                    {
+
+                        if (pJs is IJSONArray) 
+                        {
+
+                            IJSONArray pArray = pJs as IJSONArray;
+
+                            for (int i = 0; i < pArray.Count; i++) 
+                            {
+
+                                if (pArray.get_Value(i) is IJSONObject) 
+                                {
+
+                                    IJSONObject pType = pArray.get_Value(i) as IJSONObject;
+
+                                    // {"folderName":"/","serviceName":"GZCache","type":"MapServer","description":""}
+
+                                    string folderName;
+
+                                    //服务的目录 
+                                    if (pType.TryGetValueAsString("folderName", out folderName)) 
+                                    {
+
+                                    }
+
+                                    string serviceName; 
+                                    //服务的名称 
+                                    if (pType.TryGetValueAsString("serviceName", out serviceName))
+                                    {
+
+                                    }
+
+                                    string AGSType; 
+                                    //服务的类型 
+                                    if (pType.TryGetValueAsString("type", out AGSType))
+
+                                    {
+
+                                    }
+
+                                    serviceType[folderName].Add(serviceName, AGSType);
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            } 
+            catch (Exception ex)
+            { 
+            } 
+            return serviceType;
+
+        }
+
+
+        //  1.4.6 服务是否停止
+
+
+        //public List ConnectUserAGS(string host, string username, string password)
+
+        //{
+
+        //    try
+
+        //    {
+
+        //        List pList = new List();
+
+        //        IPropertySet propertySet = new PropertySetClass();
+
+        //        propertySet.SetProperty("url", host);
+
+        //        propertySet.SetProperty("ConnectionMode",
+
+        //        esriAGSConnectionMode.esriAGSConnectionModeConsumer);
+
+        //        propertySet.SetProperty("user", username);
+
+        //        propertySet.SetProperty("password", password);
+
+        //        //打开连接
+
+        //        // IAGSServerConnectionFactory pFactory = new AGSServerConnectionFactory();
+
+        //        //Type factoryType = Type.GetTypeFromProgID(
+
+        //        // "esriGISClient.AGSServerConnectionFactory");
+
+        //        //IAGSServerConnectionFactory agsFactory = (IAGSServerConnectionFactory)
+
+        //        // Activator.CreateInstance(factoryType);
+
+        //        IAGSServerConnectionName3pConnectName = new AGSServerConnectionNameClass() as IAGSServerConnectionName3;//10.1新增接口
+        //        pConnectName.ConnectionProperties = propertySet;
+
+        //        IAGSServerConnection pConnection = ((IName)pConnectName).Open() as IAGSServerConnection;
+
+        //        //IAGSServerConnection pConnection = pFactory.Open(propertySet, 0);
+
+        //        IAGSEnumServerObjectName pServerObjectNames = pConnection.ServerObjectNames;
+
+        //        pServerObjectNames.Reset();
+
+        //        IAGSServerObjectName agsServerObjectName = pServerObjectNames.Next();
+
+        //        while (agsServerObjectName != null)
+
+        //        {
+
+        //            pList.Add(agsServerObjectName);
+
+        //            agsServerObjectName = pServerObjectNames.Next();
+
+        //        }
+
+        //        return pList;
+
+        //    }
+        // }
+        //        List pList =
+
+        //pServerMnt.ConnectUserAGS("http://192.168.110.136:6080/arcgis/rest/services", "", "");
+
+        //        // IRESTServerObjectAdmin pRest = pServerAdmin as IRESTServerObjectAdmin;
+
+        //        ESRI.ArcGIS.Carto.IMapServerLayer pMapServerLayer = new
+
+        //        ESRI.ArcGIS.Carto.MapServerLayerClass();
+
+        //        IName pName = (IName)pList[0];
+
+        //        IAGSServerObject pServerObject = (IAGSServerObject)pName.Open();
+
+        //        IMapServer pMapServer = (IMapServer)pServerObject;
+
+        //        pMapServerLayer.ServerConnect(pList[0], pMapServer.DefaultMapName);
+
+        //axMapControl1.AddLayer(pMapServerLayer as ILayer);
+
+        //axMapControl1.Refresh();                                                                                                     //1.3.2 停止服务 
+        //pServerAdmin.StopConfiguration("Flow", "MapServer");
+        //pServerAdmin.DeleteConfiguration("BusSimulation/DataPrep", "MapServer");//如果自己建立了目录请按照这种方式写，不然出错
+
+
+        #endregion
+
+
+
+        #region 10.0以前的版本可以使用这种方式连接地图服务，因为9.X的版本有/ArcGIS/services这个地址，而10以后，没有这个地址 
+        /// <summary>
+        /// 添加服务图层
+        /// </summary>
+        public void AddServerLayer()
+        {
+            //IAGSServerObjectName pServerObjectName = GetMapServer("http://services.arcgisonline.com/ArcGIS/services", "ESRI_Imagery_World_2D", false);
+            IAGSServerObjectName pServerObjectName = GetMapServer("@http://192.168.50.28:6080/ArcGIS/services", "旅顺口区区域界线", false);
+            IName pName = (IName)pServerObjectName;
+            IAGSServerObject pServerObject = (IAGSServerObject)pName.Open();
+            IMapServer pMapServer = (IMapServer)pServerObject;
+            ESRI.ArcGIS.Carto.IMapServerLayer mapServerLayer = new ESRI.ArcGIS.Carto.MapServerLayerClass();
+            mapServerLayer.ServerConnect(pServerObjectName, pMapServer.DefaultMapName);
+            axMapControl1.AddLayer(mapServerLayer as ILayer);
+            axMapControl1.Refresh();
+        }
+        public IAGSServerObjectName GetMapServer(string hostOrUrl, string serviceName, bool isLAN) 
+        { 
+            //设置连接属性 
+            IPropertySet propertySet = new PropertySetClass(); 
+            if (isLAN)
+            {
+                propertySet.SetProperty("machine", hostOrUrl);
+            } 
+            else
+            {
+                propertySet.SetProperty("url", hostOrUrl);
+            }
+
+            //打开连接 
+            IAGSServerConnectionFactory pFactory = new AGSServerConnectionFactory();
+
+            //Type factoryType = Type.GetTypeFromProgID(
+            // "esriGISClient.AGSServerConnectionFactory");
+            //IAGSServerConnectionFactory agsFactory = (IAGSServerConnectionFactory)
+            // Activator.CreateInstance(factoryType);
+            IAGSServerConnection pConnection = pFactory.Open(propertySet, 0);
+
+            //Get the image server.
+            IAGSEnumServerObjectName serverObjectNameList = pConnection.ServerObjectNames; 
+            serverObjectNameList.Reset(); 
+            IAGSServerObjectName ServerObjectName = serverObjectNameList.Next();
+
+            while (ServerObjectName != null) 
+            { 
+                if ((ServerObjectName.Name.ToLower() == serviceName.ToLower()) &&  (ServerObjectName.Type == "MapServer")) 
+                { 
+                    break; 
+                } 
+                ServerObjectName = serverObjectNameList.Next(); 
+            }
+
+            //返回对象 
+            return ServerObjectName;  
+        }
+
+        #endregion
+
+       
     }
 
 }

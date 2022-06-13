@@ -33,8 +33,11 @@
             this.ImportMXD = new System.Windows.Forms.Button();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.打开表格ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.缩放至图层ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.btnImportMDB = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.btnPublish = new System.Windows.Forms.Button();
+            this.btnShowLayout = new System.Windows.Forms.Button();
             this.btnImportIMG = new System.Windows.Forms.Button();
             this.btnSelectFeature = new System.Windows.Forms.Button();
             this.btnDelAllTable = new System.Windows.Forms.Button();
@@ -56,11 +59,11 @@
             this.datalistBox = new System.Windows.Forms.ListBox();
             this.axTOCControl1 = new ESRI.ArcGIS.Controls.AxTOCControl();
             this.panel4 = new System.Windows.Forms.Panel();
+            this.axPageLayoutControl1 = new ESRI.ArcGIS.Controls.AxPageLayoutControl();
             this.axMapControl1 = new ESRI.ArcGIS.Controls.AxMapControl();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.axPageLayoutControl1 = new ESRI.ArcGIS.Controls.AxPageLayoutControl();
-            this.btnShowLayout = new System.Windows.Forms.Button();
+            this.btnConnServer = new System.Windows.Forms.Button();
             this.contextMenuStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -68,9 +71,9 @@
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.axTOCControl1)).BeginInit();
             this.panel4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.axPageLayoutControl1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.axMapControl1)).BeginInit();
             this.statusStrip1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.axPageLayoutControl1)).BeginInit();
             this.SuspendLayout();
             // 
             // ImportMXD
@@ -86,16 +89,24 @@
             // contextMenuStrip1
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.打开表格ToolStripMenuItem});
+            this.打开表格ToolStripMenuItem,
+            this.缩放至图层ToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(125, 26);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(137, 48);
             // 
             // 打开表格ToolStripMenuItem
             // 
             this.打开表格ToolStripMenuItem.Name = "打开表格ToolStripMenuItem";
-            this.打开表格ToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
+            this.打开表格ToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
             this.打开表格ToolStripMenuItem.Text = "打开表格";
             this.打开表格ToolStripMenuItem.Click += new System.EventHandler(this.打开表格ToolStripMenuItem_Click);
+            // 
+            // 缩放至图层ToolStripMenuItem
+            // 
+            this.缩放至图层ToolStripMenuItem.Name = "缩放至图层ToolStripMenuItem";
+            this.缩放至图层ToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
+            this.缩放至图层ToolStripMenuItem.Text = "缩放至图层";
+            this.缩放至图层ToolStripMenuItem.Click += new System.EventHandler(this.缩放至图层ToolStripMenuItem_Click);
             // 
             // btnImportMDB
             // 
@@ -109,6 +120,8 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.btnConnServer);
+            this.panel1.Controls.Add(this.btnPublish);
             this.panel1.Controls.Add(this.btnShowLayout);
             this.panel1.Controls.Add(this.btnImportIMG);
             this.panel1.Controls.Add(this.btnSelectFeature);
@@ -132,6 +145,26 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(179, 715);
             this.panel1.TabIndex = 9;
+            // 
+            // btnPublish
+            // 
+            this.btnPublish.Location = new System.Drawing.Point(3, 533);
+            this.btnPublish.Name = "btnPublish";
+            this.btnPublish.Size = new System.Drawing.Size(170, 23);
+            this.btnPublish.TabIndex = 23;
+            this.btnPublish.Text = "发布服务";
+            this.btnPublish.UseVisualStyleBackColor = true;
+            this.btnPublish.Click += new System.EventHandler(this.btnPublish_Click);
+            // 
+            // btnShowLayout
+            // 
+            this.btnShowLayout.Location = new System.Drawing.Point(3, 504);
+            this.btnShowLayout.Name = "btnShowLayout";
+            this.btnShowLayout.Size = new System.Drawing.Size(170, 23);
+            this.btnShowLayout.TabIndex = 22;
+            this.btnShowLayout.Text = "显示布局视图";
+            this.btnShowLayout.UseVisualStyleBackColor = true;
+            this.btnShowLayout.Click += new System.EventHandler(this.btnShowLayout_Click);
             // 
             // btnImportIMG
             // 
@@ -341,6 +374,14 @@
             this.panel4.Size = new System.Drawing.Size(966, 658);
             this.panel4.TabIndex = 12;
             // 
+            // axPageLayoutControl1
+            // 
+            this.axPageLayoutControl1.Location = new System.Drawing.Point(471, 6);
+            this.axPageLayoutControl1.Name = "axPageLayoutControl1";
+            this.axPageLayoutControl1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("axPageLayoutControl1.OcxState")));
+            this.axPageLayoutControl1.Size = new System.Drawing.Size(476, 649);
+            this.axPageLayoutControl1.TabIndex = 1;
+            // 
             // axMapControl1
             // 
             this.axMapControl1.Location = new System.Drawing.Point(6, 6);
@@ -367,23 +408,15 @@
             this.toolStripStatusLabel1.Size = new System.Drawing.Size(131, 17);
             this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
             // 
-            // axPageLayoutControl1
+            // btnConnServer
             // 
-            this.axPageLayoutControl1.Location = new System.Drawing.Point(471, 6);
-            this.axPageLayoutControl1.Name = "axPageLayoutControl1";
-            this.axPageLayoutControl1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("axPageLayoutControl1.OcxState")));
-            this.axPageLayoutControl1.Size = new System.Drawing.Size(476, 649);
-            this.axPageLayoutControl1.TabIndex = 1;
-            // 
-            // btnShowLayout
-            // 
-            this.btnShowLayout.Location = new System.Drawing.Point(3, 504);
-            this.btnShowLayout.Name = "btnShowLayout";
-            this.btnShowLayout.Size = new System.Drawing.Size(170, 23);
-            this.btnShowLayout.TabIndex = 22;
-            this.btnShowLayout.Text = "显示布局视图";
-            this.btnShowLayout.UseVisualStyleBackColor = true;
-            this.btnShowLayout.Click += new System.EventHandler(this.btnShowLayout_Click);
+            this.btnConnServer.Location = new System.Drawing.Point(3, 562);
+            this.btnConnServer.Name = "btnConnServer";
+            this.btnConnServer.Size = new System.Drawing.Size(170, 23);
+            this.btnConnServer.TabIndex = 24;
+            this.btnConnServer.Text = "连接ArcgisServer";
+            this.btnConnServer.UseVisualStyleBackColor = true;
+            this.btnConnServer.Click += new System.EventHandler(this.btnConnServer_Click);
             // 
             // Form1
             // 
@@ -404,10 +437,10 @@
             this.panel3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.axTOCControl1)).EndInit();
             this.panel4.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.axPageLayoutControl1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.axMapControl1)).EndInit();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.axPageLayoutControl1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -445,6 +478,9 @@
         private System.Windows.Forms.Button btnImportIMG;
         private ESRI.ArcGIS.Controls.AxPageLayoutControl axPageLayoutControl1;
         private System.Windows.Forms.Button btnShowLayout;
+        private System.Windows.Forms.ToolStripMenuItem 缩放至图层ToolStripMenuItem;
+        private System.Windows.Forms.Button btnPublish;
+        private System.Windows.Forms.Button btnConnServer;
     }
 }
 
