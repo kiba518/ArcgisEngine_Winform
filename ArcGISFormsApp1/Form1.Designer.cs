@@ -36,6 +36,7 @@
             this.缩放至图层ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.btnImportMDB = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.btnConnServer = new System.Windows.Forms.Button();
             this.btnPublish = new System.Windows.Forms.Button();
             this.btnShowLayout = new System.Windows.Forms.Button();
             this.btnImportIMG = new System.Windows.Forms.Button();
@@ -63,7 +64,6 @@
             this.axMapControl1 = new ESRI.ArcGIS.Controls.AxMapControl();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.btnConnServer = new System.Windows.Forms.Button();
             this.contextMenuStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -145,6 +145,16 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(179, 715);
             this.panel1.TabIndex = 9;
+            // 
+            // btnConnServer
+            // 
+            this.btnConnServer.Location = new System.Drawing.Point(3, 562);
+            this.btnConnServer.Name = "btnConnServer";
+            this.btnConnServer.Size = new System.Drawing.Size(170, 23);
+            this.btnConnServer.TabIndex = 24;
+            this.btnConnServer.Text = "连接ArcgisServer";
+            this.btnConnServer.UseVisualStyleBackColor = true;
+            this.btnConnServer.Click += new System.EventHandler(this.btnConnServer_Click);
             // 
             // btnPublish
             // 
@@ -407,16 +417,6 @@
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             this.toolStripStatusLabel1.Size = new System.Drawing.Size(131, 17);
             this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
-            // 
-            // btnConnServer
-            // 
-            this.btnConnServer.Location = new System.Drawing.Point(3, 562);
-            this.btnConnServer.Name = "btnConnServer";
-            this.btnConnServer.Size = new System.Drawing.Size(170, 23);
-            this.btnConnServer.TabIndex = 24;
-            this.btnConnServer.Text = "连接ArcgisServer";
-            this.btnConnServer.UseVisualStyleBackColor = true;
-            this.btnConnServer.Click += new System.EventHandler(this.btnConnServer_Click);
             // 
             // Form1
             // 
